@@ -20,6 +20,7 @@ Options:
 : icx -f html busy.ics                   # render as HTML (default)
 : icx -f text busy.ics                   # render as plain text (aliases: txt, ascii)
 : icx -t "My availability" busy.ics      # set the page title
+: icx -h                                 # show a minimal help and exit
 
 The two positional arguments are =INPUT= then =OUTPUT= (both default to =-=,
 i.e. stdin/stdout).

@@ -367,12 +367,28 @@
 ;; ---------------------------------------------------------------------------
 (defn- log* [& xs] (binding [*out* *err*] (apply println xs)))
 
+(def ^:private usage
+  "icx - render an ICS busy feed as free time slots (HTML or text)
+
+Usage: icx [OPTIONS] [INPUT] [OUTPUT]
+
+  INPUT and OUTPUT default to - (stdin/stdout).
+
+Options:
+  -f, --format FORMAT   html (default) or text (aliases: txt, ascii)
+  -t, --title TITLE     page title
+  -h, --help            show this help and exit
+
+Tuning is done through environment variables (ICX_ prefix, plus TZ);
+see the README for the full list.")
+
 (defn- parse-args [args]
   (loop [a args, opts {:format "html"}, pos []]
     (if (empty? a)
       (assoc opts :input (or (first pos) "-") :output (or (second pos) "-"))
       (let [x (first a)]
         (case x
+          ("-h" "--help")   (assoc opts :help true)
           ("-f" "--format") (recur (drop 2 a)
                                    (assoc opts :format
                                           (let [f (str/lower-case (second a))]
@@ -382,16 +398,27 @@
           (recur (rest a) opts (conj pos x)))))))
 
 (defn -main [& args]
-  (let [{:keys [input output title] fmt :format} (parse-args args)
-        text   (if (= input "-") (slurp *in*) (slurp input))
-        busy   (parse-events text)
-        slots  (available busy)
-        title  (or title (env "ICX_TITLE" "Available Time Slots"))
-        out    (if (= fmt "text") (render-text slots title) (render-html slots title))]
-    (log* (format "%d busy event(s) read -> %d free slot(s)" (count busy) (count slots)))
-    (if (= output "-")
-      (print out)
-      (do (spit output out) (log* (str "✓ Written to " output))))))
+  (let [{:keys [input output title help] fmt :format} (parse-args args)]
+   (cond
+     help
+     (println usage)
+     ;; No INPUT given and stdin is an interactive terminal (no pipe/redirect):
+     ;; there is nothing to read, so bail out instead of blocking on (slurp *in*).
+     (and (= input "-") (System/console))
+     (binding [*out* *err*]
+       (println "icx: no input. Pass an ICS file, or pipe one on stdin.")
+       (println "Try 'icx --help' for usage.")
+       (System/exit 2))
+     :else
+     (let [text   (if (= input "-") (slurp *in*) (slurp input))
+           busy   (parse-events text)
+           slots  (available busy)
+           title  (or title (env "ICX_TITLE" "Available Time Slots"))
+           out    (if (= fmt "text") (render-text slots title) (render-html slots title))]
+       (log* (format "%d busy event(s) read -> %d free slot(s)" (count busy) (count slots)))
+       (if (= output "-")
+         (print out)
+         (do (spit output out) (log* (str "✓ Written to " output))))))))
 
 ;; Runs when the file is launched as a script (bb src/bzg/icx.clj …),
 ;; not when it is loaded as a namespace (-m bzg.icx, require in tests).
