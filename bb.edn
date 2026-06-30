@@ -1,0 +1,11 @@
+{:paths ["src" "test"]
+ :bbin/bin {icx {:main-opts ["-m" "bzg.icx"]}}
+
+ :tasks
+ {test:generate {:doc  "Generate expected test outputs"
+                 :task (do (require 'bzg.icx-test)
+                           ((resolve 'bzg.icx-test/generate)))}
+
+  test          {:doc  "Run tests against expected outputs"
+                 :task (do (require 'bzg.icx-test)
+                           ((resolve 'bzg.icx-test/test-all)))}}}

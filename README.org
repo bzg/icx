@@ -1,0 +1,100 @@
+#+title: ICX - Export an ICS file as HTML and txt agendas
+
+[[https://intver.org/][https://img.shields.io/badge/versioning-intver.org-blue.svg?style=for-the-badge]]
+
+Read a /busy/ ICS feed (e.g. the output of =hop -f ics-anon=), subtract it
+from working hours on week days, and render the remaining /free/ slots
+as HTML or plain text, grouped by week then by day.
+
+* Usage
+
+: hop -f ics-anon agenda.org | icx - -f html > agenda.html
+: icx busy.ics -f text > agenda.txt
+: icx busy.ics agenda.html              # html by default
+
+The input is an ICS file (=-= reads stdin); only =VEVENT= blocks are used,
+each treated as busy time. The output is the complementary free slots.
+
+Options:
+
+: icx -f html busy.ics                   # render as HTML (default)
+: icx -f text busy.ics                   # render as plain text (aliases: txt, ascii)
+: icx -t "My availability" busy.ics      # set the page title
+
+The two positional arguments are =INPUT= then =OUTPUT= (both default to =-=,
+i.e. stdin/stdout).
+
+Tuning is done through environment variables (=ICX_= prefix, except the
+standard =TZ=):
+
+| Variable             | Default                   | Meaning                                        |
+|----------------------+---------------------------+------------------------------------------------|
+| =TZ=                   | system zone               | display zone (UTC =Z= is converted)              |
+| =ICX_WORK_START=       | =13:30=                     | start of the working day                       |
+| =ICX_WORK_END=         | =17:00=                     | end of the working day                         |
+| =ICX_LEAD_DAYS=        | =3=                         | working days of lead time                      |
+| =ICX_BUFFER_MINUTES=   | =10=                        | buffer around busy intervals                   |
+| =ICX_MIN_SLOT_MINUTES= | =44=                        | minimum length of a free slot                  |
+| =ICX_TITLE=            | =Available Time Slots=      | page title                                     |
+| =ICX_ICAL_URL=         | =https://bzg.fr/agenda.ics= | iCal link in the HTML header                   |
+| =ICX_VISIO_URL=        | (Renater rendez-vous)     | video-call link in the header                  |
+| =ICX_TODAY=            | today                     | ISO reference date for the window (=yyyy-MM-dd=) |
+
+* Install
+
+Assuming [[https://github.com/babashka/bbin][bbin]] is installed:
+
+: bbin install io.github.bzg/icx
+
+* Requirements
+
+=icx= is a [[https://clojure.org][Clojure]] [[https://babashka.org][Babashka]] script. It has no external dependency beyond
+Babashka itself.
+
+: brew install babashka/brew/bbin
+
+* Development
+
+To run =icx= directly from the source without installing via =bbin=:
+
+: ~$ bb -m bzg.icx busy.ics -f text
+
+* Test
+
+: ~$ bb test:generate
+: ~$ bb test
+
+Tests are golden-file based: =bb test= runs icx on =test/bzg/test.ics= and
+compares each format against =test/bzg/expected/=. Output is pinned with
+=ICX_TODAY= and =TZ= so it stays reproducible across machines; the
+=Generated on= footer is normalised. Run =bb test:generate= to refresh the
+expected outputs after an intentional change (review the diff before
+committing).
+
+* Contributing
+
+- Send a [[mailto:~bzg/orgology@lists.sr.ht][bug report]] with =[BUG] icx: <SHORT EXPLICIT BUG DESCRIPTION>=
+- Send a [[mailto:~bzg/orgology@lists.sr.ht][patch]] with =[PATCH] icx: <COMMIT SUMMARY>=
+- Send a [[mailto:~bzg/orgology@lists.sr.ht][feature request]] with =[FR] icx: <FEATURE REQUEST>=
+- Share any [[mailto:~bzg/orgology@lists.sr.ht][other question or idea]]
+
+You can also [[mailto:bzg@bzg.fr][send me an email]] and support my work on [[https://liberapay.com/bzg/][liberapay]].
+
+* Intentional Versioning
+
+This project uses [[https://intver.org][Intentional Versioning]], here are the three audiences:
+
+- =Users= : end users who use icx
+- =Integrators= : external packagers
+- =Maintainers= : maintainers to the codebase
+
+* Support the Clojure(script) ecosystem
+
+If you like Clojure(script), please consider supporting maintainers by
+donating to [[https://clojuriststogether.org][clojuriststogether.org]].
+
+* License
+
+Copyright © 2026 Bastien Guerry
+
+Distributed under the Eclipse Public License 2.0.
